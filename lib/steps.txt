@@ -1,0 +1,26 @@
+Step 1:
+Install package.
+Naviagete to pubspec.yaml and under dependencies add this. 
+dependencies:
+  permission_handler: ^5.0.1+1
+
+Step 2:
+Import the package. 
+import 'package:permission_handler/permission_handler.dart';
+
+Step 3:
+Add the permission you want to use in AndroidManifest.xml
+<uses-permission android:name="android.permission.CAMERA"></uses-permission>
+
+Step 4:
+to request permission use 
+Permission.camera.request()
+
+to get permission status
+Permission.camera.status --> will return current status [undetermined, granted, denied, restricted, permanentlyDenied]
+
+
+<uses-permission android:name="android.permission.CAMERA"></uses-permission>
+    <uses-permission android:name="android.permission.READ_CALL_LOG"></uses-permission>
+    <uses-permission android:name="android.permission.CALL_PHONE"></uses-permission>
+
