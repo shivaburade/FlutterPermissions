@@ -1,50 +1,74 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+import './phone_textfield.dart';
 import 'package:call_log/call_log.dart';
+import './callLogs.dart';
 
 class PhonelogsScreen extends StatefulWidget {
   @override
   _PhonelogsScreenState createState() => _PhonelogsScreenState();
 }
 
-class _PhonelogsScreenState extends State<PhonelogsScreen> {
+class _PhonelogsScreenState extends State<PhonelogsScreen> with  WidgetsBindingObserver {
   //Iterable<CallLogEntry> entries;
-  TextEditingController t1 = TextEditingController();
-  void call(String text) async{
-     bool res = await FlutterPhoneDirectCaller.callNumber(text);
-  }
+  PhoneTextField pt = new PhoneTextField();
+  CallLogs cl = new CallLogs();
+
+  AppLifecycleState _notification;
+  Future<Iterable<CallLogEntry>> logs;
 
   @override
   void initState(){
     // TODO: implement initState
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    logs = cl.getCallLogs();
   }
 
-  
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // TODO: implement didChangeAppLifecycleState
+    super.didChangeAppLifecycleState(state);
+
+    if (AppLifecycleState.resumed == state){
+    setState(() {
+        logs = cl.getCallLogs();
+      });
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Phone"),),
       body: Column(
         children: [
-          TextField(controller: t1, decoration: InputDecoration(labelText: "Phone number"),keyboardType: TextInputType.phone, textInputAction: TextInputAction.done, onSubmitted: (value) => call(value),),
-           FlatButton(onPressed: (){
-             call(t1.text);
-             }
-           , child: Text("Call")),
-          FutureBuilder(future:  CallLog.get(),builder: (context, snapshot){
+          pt,
+          //TextField(controller: t1, decoration: InputDecoration(labelText: "Phone number", contentPadding: EdgeInsets.all(10), suffixIcon: IconButton(icon: Icon(Icons.phone), onPressed: (){print("pressed");})),keyboardType: TextInputType.phone, textInputAction: TextInputAction.done, onSubmitted: (value) => call(value),),
+          FutureBuilder(future:  logs,builder: (context, snapshot){
             if(snapshot.connectionState == ConnectionState.done){
               Iterable<CallLogEntry> entries = snapshot.data;
               return Expanded(
                 child: ListView.builder(itemBuilder: (context, index){
-                  return ListTile(
-                      leading: CircleAvatar(maxRadius: 30, foregroundColor: Colors.green, backgroundColor: Colors.green,),
-                      title: Text(entries.elementAt(index).number),
-                      subtitle: Text(entries.elementAt(index).duration.toString() + "s"),
-                      trailing: IconButton(icon: Icon(Icons.phone), color: Colors.green, onPressed: (){
-                        call(entries.elementAt(index).number);
-                      }),
-                    );
+                  
+                  return GestureDetector( child: Card(
+                        child: ListTile(
+                        leading: cl.getAvator(entries.elementAt(index).callType),
+                        title: cl.getTitle(entries.elementAt(index)),
+                        subtitle: Text(cl.formatDate(new DateTime.fromMillisecondsSinceEpoch(entries.elementAt(index).timestamp)) + "\n" + cl.getTime(entries.elementAt(index).duration)),
+                        isThreeLine: true,
+                        trailing: IconButton(icon: Icon(Icons.phone), color: Colors.green, onPressed: (){
+                          cl.call(entries.elementAt(index).number);
+                        }),
+                      ),
+                  ), onLongPress: () => pt.update(entries.elementAt(index).number.toString()),
+                  );
                 }, itemCount: entries.length,
                 
                 ),
